@@ -1,3 +1,4 @@
+# 以下にあるキーワードの部分に検索したい単語を入れてください。
 import requests
 import pandas as pd
 import time
