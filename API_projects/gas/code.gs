@@ -1,9 +1,16 @@
-// --- 設定項目 ---
-const API_KEY = 'your Calil API'; 
-const SYSTEM_IDS = 'Tokyo_Chofu,Univ_Tokyo,Tokyo_Fuchu,Tokyo_Inagi'; // 4つのIDを指定
+// --- 設定項目（GitHub公開時はここを空にするか、プロパティから読み込む） ---
+const scriptProperties = PropertiesService.getScriptProperties();
+const API_KEY = scriptProperties.getProperty('CALIL_API_KEY'); // スクリプトプロパティから取得
+const SYSTEM_IDS = 'Tokyo_Chofu,Tokyo_Fuchu,Tokyo_Inagi'; 
 // ----------------
 
 function checkLibraryStock() {
+  // APIキーが設定されていない場合の警告
+  if (!API_KEY) {
+    Browser.msgBox("スクリプトプロパティに 'CALIL_API_KEY' が設定されていません。設定画面から追加してください。");
+    return;
+  }
+  
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   const lastRow = sheet.getLastRow();
   
@@ -11,7 +18,6 @@ function checkLibraryStock() {
     Browser.msgBox("A列にISBNを入力してください。");
     return;
   }
-
   // A列からM列（13列目）までの全データを一括で取得
   const dataRange = sheet.getRange(2, 1, lastRow - 1, 13);
   const data = dataRange.getValues();
@@ -25,13 +31,11 @@ function checkLibraryStock() {
 
     // 現在の各図書館のステータスを取得
     let currentChofu = row[1];  // B列
-    let currentUtokyo = row[4]; // E列
-    let currentFuchu = row[7];  // H列
-    let currentInagi = row[10]; // K列
+    let currentFuchu = row[7];  // E列
+    let currentInagi = row[10]; // H列
 
     // ★軽量化: すべての図書館で結果が確定している場合はスキップ
     if (currentChofu !== "" && currentChofu !== "確認中..." &&
-        currentUtokyo !== "" && currentUtokyo !== "確認中..." &&
         currentFuchu !== "" && currentFuchu !== "確認中..." &&
         currentInagi !== "" && currentInagi !== "確認中...") {
       continue;
@@ -46,7 +50,6 @@ function checkLibraryStock() {
       let json = JSON.parse(response.getContentText());
       
       let chofuStatus = "なし", chofuDetail = "", chofuUrl = "";
-      let utokyoStatus = "なし", utokyoDetail = "", utokyoUrl = "";
       let fuchuStatus = "なし", fuchuDetail = "", fuchuUrl = "";
       let inagiStatus = "なし", inagiDetail = "", inagiUrl = "";
 
@@ -65,7 +68,7 @@ function checkLibraryStock() {
           }
         }
 
-        // --- 3. 府中市立図書館 ---
+        // --- 2. 府中市立図書館 ---
         if (book['Tokyo_Fuchu']) {
           let res = book['Tokyo_Fuchu'];
           if (res.status === 'Running') {
@@ -77,7 +80,7 @@ function checkLibraryStock() {
           }
         }
 
-        // --- 4. 稲城市立図書館 ---
+        // --- 3. 稲城市立図書館 ---
         if (book['Tokyo_Inagi']) {
           let res = book['Tokyo_Inagi'];
           if (res.status === 'Running') {
@@ -95,13 +98,13 @@ function checkLibraryStock() {
       sheet.getRange(i + 2, 3).setValue(chofuDetail); // C列
       sheet.getRange(i + 2, 4).setValue(chofuUrl);    // D列
 
-      sheet.getRange(i + 2, 8).setValue(fuchuStatus); // H列:府中
-      sheet.getRange(i + 2, 9).setValue(fuchuDetail); // I列
-      sheet.getRange(i + 2, 10).setValue(fuchuUrl);   // J列
+      sheet.getRange(i + 2, 8).setValue(fuchuStatus); // E列:府中
+      sheet.getRange(i + 2, 9).setValue(fuchuDetail); // F列
+      sheet.getRange(i + 2, 10).setValue(fuchuUrl);   // G列
 
-      sheet.getRange(i + 2, 11).setValue(inagiStatus);// K列:稲城
-      sheet.getRange(i + 2, 12).setValue(inagiDetail);// L列
-      sheet.getRange(i + 2, 13).setValue(inagiUrl);   // M列
+      sheet.getRange(i + 2, 11).setValue(inagiStatus);// H列:稲城
+      sheet.getRange(i + 2, 12).setValue(inagiDetail);// I列
+      sheet.getRange(i + 2, 13).setValue(inagiUrl);   // J列
 
     } catch (e) {
       console.log("Error: " + e);
