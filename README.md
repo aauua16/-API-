@@ -1,19 +1,69 @@
-# -図書館APIによる検索-
+# 図書館APIによる蔵書検索ツール
 
-### 説明
-- カーリルAPIを活用して、本のISBN取得から特定図書館の蔵書確認までを行うツールです。
-- このツールでは、まずpythonを用いて調べたい本のテーマのISBNを一括で取得します。
-- のちに、集めたISBNをグーグルスプレッドシートにコピペし、Google Apps Script（以下、GAS）のコードをデプロイすると、設定した図書館で現在その蔵書があるかどうか、その蔵書が貸出しできるのかを調べることができます。
-- 図書館APIは、ほぼすべての図書館の情報が含まれていますので、お近くの図書館のAPIを入手していただけるとご活用いただけます。
+カーリルAPIを活用して、本のISBN一括取得から特定図書館の蔵書確認までを行うツールです。
 
-### 構成
-- `python/`: Pythonによるコマンドラインツール
-- `gas/`: Google Apps Script用コード
+## 概要
 
-### セットアップ (Python)
-1. `.docs` ファイルを追加し、カーリルのAPIキーを設定してください。
+1. **Python** でテーマに関連する書籍のISBNをGoogle Books APIから一括取得
+2. 取得したISBNをGoogleスプレッドシートのA列に貼り付け
+3. **Google Apps Script (GAS)** をデプロイして、設定した図書館の蔵書状況を自動確認
 
-#### 注意
-- この機能は、あるテーマを広く探求・調査したいときに役立つツールです。一つの本がある図書館にあるかどうかを検索することには向いていません。
-- GASをデプロイすると、スプレッドシートの方で、「確認中」と表示されることがあります。これは図書館APIの仕様であり、数分後にもう一度デプロイすることによって、正しく機能します。
-- このツールでは、調布・府中・稲城の図書館を活用していますが、それ以外のAPIが配布されている図書館でも活用できます。設定したい図書館を以下のURLで検索し、GAS内の図書館を設定する # SYSTEM_IDS, #let current, 等のコードを”都道府県＿市区町村”に書き換えてください。[カーリル 図書館検索](https://calil.jp/library/)
+複数テーマを広く調査したい場合に向いています。一冊の本を検索するには向いていません。
+
+## ファイル構成
+
+```
+API_projects/
+├── python/
+│   ├── API.py           # ISBNを一括取得するPythonスクリプト
+│   └── requirements.txt # 依存パッケージ
+├── gas/
+│   └── code.gs          # 蔵書確認するGoogle Apps Script
+└── docs/
+    └── setup.md         # スプレッドシートの列定義・セットアップ手順
+```
+
+## セットアップ
+
+### Python（ISBN取得）
+
+```bash
+# 依存パッケージをインストール
+pip install -r API_projects/python/requirements.txt
+
+# デフォルトキーワードで実行
+python API_projects/python/API.py
+
+# キーワードを指定して実行
+python API_projects/python/API.py 日本経済史 "鉄道 産業発展"
+
+# 出力ファイル名を指定
+python API_projects/python/API.py 日本経済史 --output my_books.csv
+```
+
+実行後、カレントディレクトリに `research_isbns.csv` が生成されます。
+
+### Google Apps Script（蔵書確認）
+
+1. [スプレッドシートのテンプレートをコピー](https://docs.google.com/spreadsheets/d/1Lxd1xxr6rc0tOqxUOAplIAx3CWkPBKdGODAOh4gL1Yc/copy)
+2. A列に取得したISBNを貼り付け
+3. メニューから「拡張機能」→「Apps Script」を開き、`code.gs` の内容を貼り付け
+4. スクリプトプロパティに `CALIL_API_KEY` を設定（取得先: [カーリルAPI](https://calil.jp/doc/api.html)）
+5. スプレッドシートを再読み込みすると「📖 研究用メニュー」が追加されるので実行
+
+詳細な列定義と設定手順は `API_projects/docs/setup.md` を参照してください。
+
+## 図書館の変更方法
+
+デフォルトは調布・府中・稲城の図書館です。変更するには `code.gs` 内の `SYSTEM_IDS` を編集してください。
+
+```javascript
+const SYSTEM_IDS = 'Tokyo_Chofu,Tokyo_Fuchu,Tokyo_Inagi';
+```
+
+システムIDは[カーリル 図書館検索](https://calil.jp/library/)で確認できます。
+
+## 注意
+
+- GAS実行後に「確認中...」が残る場合は、数分待って再度実行してください（カーリルAPIの仕様）
+- CSVファイルはGitにコミットされません（`.gitignore` で除外済み）

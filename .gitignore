@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# 出力ファイル
+*.csv
+
+# APIキー（絶対にコミットしないこと）
+.docs
+*.key
