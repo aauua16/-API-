@@ -1,7 +1,11 @@
 import argparse
+import os
 import requests
 import pandas as pd
 import time
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def search_isbn_for_research(keyword):
@@ -47,15 +51,18 @@ def search_isbn_for_research(keyword):
 
 
 def main():
+    env_output = os.getenv("DEFAULT_OUTPUT", "research_isbns.csv")
+    env_keywords = os.getenv("DEFAULT_KEYWORDS", "日本経済史,鉄道 産業発展,マッキンゼー")
+
     parser = argparse.ArgumentParser(
         description="Google Books APIでISBNを一括取得するツール",
         epilog="例: python API.py 日本経済史 \"鉄道 産業発展\" マッキンゼー"
     )
     parser.add_argument("keywords", nargs="*", help="検索キーワード（複数可）")
-    parser.add_argument("--output", default="research_isbns.csv", help="出力CSVファイル名（デフォルト: research_isbns.csv）")
+    parser.add_argument("--output", default=env_output, help="出力CSVファイル名")
     args = parser.parse_args()
 
-    keywords = args.keywords if args.keywords else ["日本経済史", "鉄道 産業発展", "マッキンゼー"]
+    keywords = args.keywords if args.keywords else env_keywords.split(",")
 
     all_data = []
     for kw in keywords:
